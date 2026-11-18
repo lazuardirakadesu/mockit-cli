@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Production build outputs
+dist/
+
+# Local databases and persistence state
+.mockdb.json
+.mockdb.json.tmp
+*.mockdb.json
+*.mockdb.json.tmp
+tests/fixtures/.*.json*
+
+# TypeScript
+*.tsbuildinfo
+
+# Test and coverage
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db

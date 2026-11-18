@@ -1,0 +1,53 @@
+{
+  "server": {
+    "port": 4000
+  },
+  "resources": {
+    "users": {
+      "seed": [
+        { "id": 1, "name": "Alice Johnson", "email": "alice@example.com", "role": "admin" },
+        { "id": 2, "name": "Bob Smith", "email": "bob@example.com", "role": "user" },
+        { "id": 3, "name": "Charlie Brown", "email": "charlie@example.com", "role": "user" }
+      ],
+      "fields": {
+        "id": { "type": "number", "auto": true },
+        "name": { "type": "string", "required": true },
+        "email": { "type": "string", "required": true, "unique": true },
+        "role": { "type": "string", "enum": ["admin", "user", "guest"], "default": "user" }
+      }
+    },
+    "products": {
+      "seed": [
+        { "id": 1, "name": "Wireless Keyboard", "price": 49.99, "stock": 150, "category": "electronics" },
+        { "id": 2, "name": "USB-C Hub", "price": 29.99, "stock": 300, "category": "electronics" },
+        { "id": 3, "name": "Standing Desk Mat", "price": 39.99, "stock": 80, "category": "office" }
+      ],
+      "fields": {
+        "id": { "type": "number", "auto": true },
+        "name": { "type": "string", "required": true },
+        "price": { "type": "number", "required": true, "min": 0 },
+        "stock": { "type": "number", "default": 0 },
+        "category": { "type": "string" }
+      }
+    },
+    "posts": {
+      "seed": [
+        { "id": 1, "title": "Getting Started with MockIt", "body": "MockIt makes frontend development faster by providing instant stateful APIs.", "userId": 1, "published": true },
+        { "id": 2, "title": "Advanced Filtering", "body": "Use query parameters like ?_sort=title&_order=desc to sort and filter.", "userId": 2, "published": false }
+      ]
+    },
+    "comments": {
+      "seed": []
+    }
+  },
+  "routes": {
+    "GET /api/health": {
+      "status": 200,
+      "body": { "status": "ok", "uptime": "{{uptime}}" }
+    },
+    "POST /api/login": {
+      "status": 200,
+      "body": { "token": "mock-jwt-{{timestamp}}", "expiresIn": 3600 }
+    }
+  }
+}
