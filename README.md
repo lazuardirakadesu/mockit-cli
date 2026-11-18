@@ -4,6 +4,7 @@
 
 Spin up a production-like local REST API server in seconds from a simple JSON or YAML config file. Unlike static mock servers, MockIt is **stateful** — your `POST`, `PUT`, `PATCH`, and `DELETE` mutations persist locally without mutating your seed files.
 
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)]()
 [![Tests](https://img.shields.io/badge/tests-41%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node: >=18](https://img.shields.io/badge/node-%3E%3D18-green.svg)]()
@@ -183,4 +184,4 @@ npm run build
 
 ## 📄 License
 
-MIT © Google Antigravity & Open Source Contributors
+MIT License © 2026 Lazuardi Raka
