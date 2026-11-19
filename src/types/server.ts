@@ -16,3 +16,12 @@ export interface ResourceInfo {
   recordCount: number;
   methods: string[];
 }
+
+export interface RequestLog {
+  id: string;
+  timestamp: number;
+  method: string;
+  path: string;
+  status: number;
+  duration: number;
+}

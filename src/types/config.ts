@@ -9,6 +9,7 @@ export interface ServerConfig {
   cors: boolean;
   delay: number;
   errorRate: number;
+  ui?: boolean;
 }
 
 export interface FieldRule {

@@ -4,9 +4,12 @@
  */
 
 export { createCLI } from './cli/index.js';
+export { findConfigFile, loadConfigFile, resolveConfig } from './config/loader.js';
 export { DataStore } from './db/store.js';
 export { Persistence } from './db/persistence.js';
 export { createServer, createApp } from './server/index.js';
+export { createStudioRouter } from './server/studio.js';
+export { RequestLogBuffer } from './server/middleware/logger.js';
 
 export type {
   MockConfig,
@@ -17,7 +20,7 @@ export type {
   ResourceOptions,
 } from './types/config.js';
 
-export type { ResolvedConfig, ResourceInfo } from './types/server.js';
+export type { ResolvedConfig, ResourceInfo, RequestLog } from './types/server.js';
 
 export type {
   StoreRecord,

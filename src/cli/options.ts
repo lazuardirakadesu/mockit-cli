@@ -10,4 +10,5 @@ export interface CLIOptions {
   errorRate?: number;
   watch?: boolean;
   dbFile?: string;
+  ui?: boolean;
 }

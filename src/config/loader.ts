@@ -86,6 +86,7 @@ export interface CLIOverrides {
   host?: string;
   delay?: number;
   errorRate?: number;
+  ui?: boolean;
 }
 
 export function resolveConfig(
@@ -100,6 +101,7 @@ export function resolveConfig(
     ...(overrides.host !== undefined && { host: overrides.host }),
     ...(overrides.delay !== undefined && { delay: overrides.delay }),
     ...(overrides.errorRate !== undefined && { errorRate: overrides.errorRate }),
+    ...(overrides.ui !== undefined && { ui: overrides.ui }),
   };
 
   return {

@@ -25,7 +25,7 @@ export function createCLI(): Command {
   program
     .name('mockit')
     .description('⚡ Zero-config stateful mock API server')
-    .version('0.1.0');
+    .version('2.0.0');
 
   // ── mockit start ───────────────────────────────────────────────────
   program
@@ -41,6 +41,7 @@ export function createCLI(): Command {
       parseInt,
     )
     .option('-w, --watch', 'Watch config file for changes', false)
+    .option('--no-ui', 'Disable embedded Web Studio dashboard')
     .option('--db-file <path>', 'Path to persistence file', DEFAULT_DB_FILE)
     .action(async (opts: CLIOptions) => {
       try {
@@ -82,6 +83,7 @@ async function startServer(opts: CLIOptions): Promise<void> {
     host: opts.host,
     delay: opts.delay,
     errorRate: opts.errorRate,
+    ui: opts.ui,
   });
 
   // 2. Initialize store & persistence
@@ -90,7 +92,7 @@ async function startServer(opts: CLIOptions): Promise<void> {
   seedStore(store, persistence, rawConfig);
 
   // 3. Start HTTP server
-  const serverInstance = createServer(config, store, persistence);
+  const serverInstance = createServer(config, store, persistence, rawConfig);
 
   // 4. Print startup banner
   printBanner(

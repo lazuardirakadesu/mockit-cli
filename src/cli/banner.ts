@@ -14,7 +14,7 @@ export function printBanner(
 ): void {
   console.log('');
   console.log(
-    pc.bold(pc.cyan('  ⚡ MockIt')) + pc.gray(' v0.1.0'),
+    pc.bold(pc.cyan('  ⚡ MockIt')) + pc.gray(' v2.0.0'),
   );
   console.log(pc.gray('  Stateful Mock API Server'));
   console.log('');
@@ -70,6 +70,11 @@ export function printBanner(
   // ── Server info ────────────────────────────────────────────────────
   const url = `http://${config.server.host}:${config.server.port}`;
   console.log(`  ${pc.green('🚀')} Server running at ${pc.bold(pc.underline(url))}`);
+
+  if (config.server.ui !== false) {
+    const studioUrl = `http://${config.server.host}:${config.server.port}/_studio`;
+    console.log(`  ${pc.magenta('✦')}  Web Studio: ${pc.cyan(pc.underline(studioUrl))}`);
+  }
 
   if (config.server.delay > 0) {
     console.log(`  ${pc.yellow('⏱')}  Delay: ${config.server.delay}ms`);

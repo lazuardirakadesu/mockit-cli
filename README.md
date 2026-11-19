@@ -4,8 +4,8 @@
 
 Spin up a production-like local REST API server in seconds from a simple JSON or YAML config file. Unlike static mock servers, MockIt is **stateful** — your `POST`, `PUT`, `PATCH`, and `DELETE` mutations persist locally without mutating your seed files.
 
-[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)]()
-[![Tests](https://img.shields.io/badge/tests-41%20passed-brightgreen.svg)]()
+[![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)]()
+[![Tests](https://img.shields.io/badge/tests-47%20passed-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node: >=18](https://img.shields.io/badge/node-%3E%3D18-green.svg)]()
 
@@ -13,6 +13,7 @@ Spin up a production-like local REST API server in seconds from a simple JSON or
 
 ## ✨ Features
 
+- 🖥️ **Embedded Web Studio Dashboard (`/_studio`)** — Offline-ready visual dashboard with Linear / Vercel Precision Dark aesthetic. Inspect and mutate mock records, tweak latency and chaos sliders in real time, and monitor live request logs.
 - 🚀 **Zero-Config Startup** — Auto-discovers `mock.config.json` or `mock.config.yaml` in your working directory.
 - 🔄 **Automatic CRUD Routes** — Generates complete RESTful endpoints (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`) for every collection.
 - 💾 **Stateful Persistence** — All mutations automatically save to a local database (`.mockdb.json`) and survive server restarts while keeping your original seed intact.
@@ -21,7 +22,7 @@ Spin up a production-like local REST API server in seconds from a simple JSON or
 - 💥 **Chaos Mode (`--error-rate <0-100>`)** — Randomly inject `500 Internal Server Error` responses to stress-test error boundaries and retry logic.
 - 🛡️ **Optional Schema Validation** — Validate request payloads against field types, required fields, and unique constraints.
 - 🔀 **Custom Static Routes** — Mock auth endpoints, health checks, or arbitrary webhook responses with template strings.
-- 🎨 **Beautiful DX** — Clean, colorful terminal table showing active endpoints, HTTP methods, and response times.
+- 🎨 **Beautiful DX** — Clean, colorful terminal table showing active endpoints, HTTP methods, response times, and Web Studio link.
 
 ---
 
@@ -104,6 +105,7 @@ mockit start [options]
 | `--delay <ms>` | `-d` | Artificial network delay in milliseconds | `0` |
 | `--error-rate <0-100>` | `-e` | Percentage chance of random 500 error | `0` |
 | `--watch` | `-w` | Watch config file for changes | `false` |
+| `--no-ui` | | Disable embedded Web Studio dashboard | `false` (UI enabled by default) |
 | `--db-file <path>` | | Custom persistence storage path | `.mockdb.json` |
 
 ### Reset Persisted Data

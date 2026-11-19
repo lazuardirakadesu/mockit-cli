@@ -16,7 +16,12 @@ export function seedStore(
   store: DataStore,
   persistence: Persistence,
   config: MockConfig,
+  forceReset = false,
 ): void {
+  if (forceReset) {
+    persistence.delete();
+  }
+
   if (persistence.exists()) {
     // Restore persisted state
     const persisted = persistence.load();

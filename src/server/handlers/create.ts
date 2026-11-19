@@ -43,24 +43,28 @@ export function handleCreate(
       }
     }
 
-    // Auto-assign ID if not provided
+    // Auto-assign ID if not provided (placed first in object keys)
     const hasAutoId = definition.fields?.id?.auto !== false;
+    let newRecord: StoreRecord;
     if (hasAutoId && body.id === undefined) {
-      body.id = nextId(resource);
+      const id = nextId(resource);
+      newRecord = { id, ...body };
+    } else {
+      newRecord = body as StoreRecord;
     }
 
     // Check unique constraints
     if (definition.fields) {
       for (const [field, rule] of Object.entries(definition.fields)) {
-        if (rule.unique && body[field] !== undefined) {
+        if (rule.unique && newRecord[field] !== undefined) {
           const existing = store
             .getAll(resource)
-            .find((r) => r[field] === body[field]);
+            .find((r) => r[field] === newRecord[field]);
           if (existing) {
             return c.json(
               {
                 error: 'Conflict',
-                message: `${resource} with ${field} "${body[field]}" already exists`,
+                message: `${resource} with ${field} "${newRecord[field]}" already exists`,
               },
               409,
             );
@@ -69,7 +73,7 @@ export function handleCreate(
       }
     }
 
-    const record = store.insert(resource, body as StoreRecord);
+    const record = store.insert(resource, newRecord);
     persistence.scheduleSave(() => store.snapshot());
 
     return c.json(record, 201);

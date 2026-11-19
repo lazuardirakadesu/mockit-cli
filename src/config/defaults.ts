@@ -10,6 +10,7 @@ export const DEFAULT_SERVER_CONFIG: ServerConfig = {
   cors: true,
   delay: 0,
   errorRate: 0,
+  ui: true,
 };
 
 export const DEFAULT_PAGE_SIZE = 20;

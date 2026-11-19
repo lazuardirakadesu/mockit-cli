@@ -1,16 +1,22 @@
 /**
  * Simulates network latency by delaying every request.
+ * Supports static number or dynamic getter function.
+ * Skips internal studio endpoints (/_*).
  */
 
 import type { MiddlewareHandler } from 'hono';
 
-export function delayMiddleware(ms: number): MiddlewareHandler {
-  if (ms <= 0) {
-    return async (_c, next) => next();
-  }
+export function delayMiddleware(delay: number | (() => number)): MiddlewareHandler {
+  return async (c, next) => {
+    // Skip internal studio requests
+    if (c.req.path.startsWith('/_')) {
+      return next();
+    }
 
-  return async (_c, next) => {
-    await new Promise((resolve) => setTimeout(resolve, ms));
+    const ms = typeof delay === 'function' ? delay() : delay;
+    if (ms > 0) {
+      await new Promise((resolve) => setTimeout(resolve, ms));
+    }
     await next();
   };
 }

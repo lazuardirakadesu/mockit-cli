@@ -1,7 +1,7 @@
 {
   "name": "mockit-server",
-  "version": "0.1.0",
-  "description": "Zero-config stateful mock API server CLI for frontend developers",
+  "version": "2.0.0",
+  "description": "Zero-config stateful mock API server CLI with Web Studio dashboard",
   "type": "module",
   "bin": {
     "mockit": "./dist/bin/mockit.cjs"
@@ -21,7 +21,9 @@
   ],
   "scripts": {
     "dev": "tsx bin/mockit.ts start --config examples/basic/mock.config.json --watch",
-    "build": "tsup",
+    "build": "npm run build:cli && npm run build:ui",
+    "build:cli": "tsup",
+    "build:ui": "npm --prefix ui run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
