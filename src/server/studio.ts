@@ -11,7 +11,9 @@ import type { MockConfig } from '../types/config.js';
 import type { DataStore } from '../db/store.js';
 import type { Persistence } from '../db/persistence.js';
 import type { RequestLogBuffer } from './middleware/logger.js';
+import type { StoreRecord } from '../types/store.js';
 import { seedStore } from '../db/seed.js';
+import { initIdCounter, removeIdCounter } from '../utils/id.js';
 
 export function resolveUiDir(): string | null {
   const baseDirs: string[] = [];
@@ -116,6 +118,103 @@ export function createStudioRouter(
     return c.json({
       success: true,
       message: 'Database reset to initial seed data',
+    });
+  });
+
+  // ── POST /_api/studio/resources ─────────────────────────────────────
+  app.post('/_api/studio/resources', async (c) => {
+    let body: { name?: string; seed?: Record<string, unknown>[] };
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: 'Bad Request', message: 'Invalid JSON body' }, 400);
+    }
+
+    const name = String(body.name ?? '').trim();
+    if (!name) {
+      return c.json(
+        { error: 'Bad Request', message: 'Resource "name" is required' },
+        400,
+      );
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      return c.json(
+        {
+          error: 'Bad Request',
+          message:
+            'Resource name must contain only letters, numbers, hyphens, and underscores',
+        },
+        400,
+      );
+    }
+
+    if (store.hasResource(name)) {
+      return c.json(
+        { error: 'Conflict', message: `Resource "${name}" already exists` },
+        409,
+      );
+    }
+
+    // Process optional seed records
+    let seedRecords: StoreRecord[] = [];
+    if (Array.isArray(body.seed)) {
+      seedRecords = body.seed.map((item, idx) => {
+        if (typeof item === 'object' && item !== null) {
+          if (item.id === undefined) {
+            return { id: idx + 1, ...item };
+          }
+          return item as StoreRecord;
+        }
+        return { id: idx + 1, value: item };
+      });
+    }
+
+    store.createResource(name, seedRecords);
+    initIdCounter(name, seedRecords);
+
+    // Register into config.resources
+    config.resources[name] = {
+      seed: seedRecords,
+    };
+
+    // Persist immediately to .mockdb.json
+    persistence.saveSync(store.snapshot());
+
+    return c.json(
+      {
+        success: true,
+        message: `Resource "${name}" created successfully`,
+        resource: {
+          name,
+          recordCount: store.getRecordCount(name),
+        },
+      },
+      201,
+    );
+  });
+
+  // ── DELETE /_api/studio/resources/:name ─────────────────────────────
+  app.delete('/_api/studio/resources/:name', (c) => {
+    const name = c.req.param('name');
+    if (!name || !store.hasResource(name)) {
+      return c.json(
+        { error: 'Not Found', message: `Resource "${name}" does not exist` },
+        404,
+      );
+    }
+
+    store.deleteResource(name);
+    removeIdCounter(name);
+    delete config.resources[name];
+
+    // Persist immediately to .mockdb.json
+    persistence.saveSync(store.snapshot());
+
+    return c.json({
+      success: true,
+      message: `Resource "${name}" deleted successfully`,
+      name,
     });
   });
 

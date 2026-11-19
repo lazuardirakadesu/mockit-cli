@@ -23,6 +23,10 @@ export function nextId(resource: string): number {
   return next;
 }
 
+export function removeIdCounter(resource: string): void {
+  counters.delete(resource);
+}
+
 export function resetIdCounters(): void {
   counters.clear();
 }

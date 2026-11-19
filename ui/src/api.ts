@@ -80,3 +80,32 @@ export async function deleteRecord(
   }
   return res.json();
 }
+
+export async function createResource(
+  name: string,
+  seed?: Record<string, unknown>[],
+): Promise<{ success: boolean; message: string; resource: { name: string; recordCount: number } }> {
+  const res = await fetch('/_api/studio/resources', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, seed }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Failed to create resource');
+  }
+  return res.json();
+}
+
+export async function deleteResource(
+  name: string,
+): Promise<{ success: boolean; message: string; name: string }> {
+  const res = await fetch(`/_api/studio/resources/${name}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Failed to delete resource');
+  }
+  return res.json();
+}

@@ -150,4 +150,86 @@ describe('Studio API Integration (/_api/studio/*)', () => {
     const html = await studioRes.text();
     expect(html).toContain('MockIt Studio');
   });
+
+  it('POST /_api/studio/resources dynamically creates a collection and immediately enables /api/:name', async () => {
+    // 1. Create a new collection 'orders'
+    const createRes = await app.request('/_api/studio/resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: 'orders',
+        seed: [{ customer: 'Alice', total: 120 }, { customer: 'Bob', total: 250 }],
+      }),
+    });
+
+    expect(createRes.status).toBe(201);
+    const createBody = await createRes.json();
+    expect(createBody.success).toBe(true);
+    expect(createBody.resource.name).toBe('orders');
+    expect(createBody.resource.recordCount).toBe(2);
+
+    // 2. Immediately query GET /api/orders
+    const listRes = await app.request('/api/orders');
+    expect(listRes.status).toBe(200);
+    const list = await listRes.json();
+    expect(list).toHaveLength(2);
+    expect(list[0].id).toBe(1);
+    expect(list[0].customer).toBe('Alice');
+
+    // 3. Immediately test POST /api/orders
+    const postRes = await app.request('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customer: 'Charlie', total: 400 }),
+    });
+    expect(postRes.status).toBe(201);
+    const newOrder = await postRes.json();
+    expect(newOrder.id).toBe(3);
+
+    // 4. Verify in GET /_api/studio/state
+    const stateRes = await app.request('/_api/studio/state');
+    const state = await stateRes.json();
+    expect(state.resourceNames).toContain('orders');
+    expect(state.resources.orders).toHaveLength(3);
+  });
+
+  it('POST /_api/studio/resources validates name and conflicts', async () => {
+    // Conflict with existing
+    const conflictRes = await app.request('/_api/studio/resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'products' }),
+    });
+    expect(conflictRes.status).toBe(409);
+
+    // Invalid characters
+    const invalidRes = await app.request('/_api/studio/resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'invalid collection name!' }),
+    });
+    expect(invalidRes.status).toBe(400);
+  });
+
+  it('DELETE /_api/studio/resources/:name deletes a collection and deactivates /api/:name', async () => {
+    // First create collection
+    await app.request('/_api/studio/resources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'temp_items' }),
+    });
+
+    const checkRes = await app.request('/api/temp_items');
+    expect(checkRes.status).toBe(200);
+
+    // Delete it
+    const deleteRes = await app.request('/_api/studio/resources/temp_items', {
+      method: 'DELETE',
+    });
+    expect(deleteRes.status).toBe(200);
+
+    // Querying /api/temp_items should now 404
+    const afterDeleteRes = await app.request('/api/temp_items');
+    expect(afterDeleteRes.status).toBe(404);
+  });
 });

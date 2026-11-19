@@ -13,6 +13,18 @@ export class DataStore {
     return Array.from(this.data.keys());
   }
 
+  hasResource(resource: string): boolean {
+    return this.data.has(resource);
+  }
+
+  createResource(resource: string, seed: StoreRecord[] = []): void {
+    this.data.set(resource, [...seed]);
+  }
+
+  deleteResource(resource: string): boolean {
+    return this.data.delete(resource);
+  }
+
   loadAll(data: StoreData): void {
     this.data.clear();
     for (const [resource, records] of Object.entries(data)) {

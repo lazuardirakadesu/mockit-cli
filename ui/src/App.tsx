@@ -6,6 +6,8 @@ import {
   createRecord,
   updateRecord,
   deleteRecord,
+  createResource,
+  deleteResource,
 } from './api.ts';
 import type { StudioState, RecordItem } from './types.ts';
 import { Header } from './components/Header.tsx';
@@ -13,6 +15,7 @@ import { Sidebar } from './components/Sidebar.tsx';
 import { ResourceTable } from './components/ResourceTable.tsx';
 import { RequestLogs } from './components/RequestLogs.tsx';
 import { RecordModal } from './components/RecordModal.tsx';
+import { CreateResourceModal } from './components/CreateResourceModal.tsx';
 import { ConfirmModal } from './components/ConfirmModal.tsx';
 import { Loader2 } from 'lucide-react';
 
@@ -24,8 +27,10 @@ export const App: React.FC = () => {
 
   // Modals state
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isCreateResourceModalOpen, setIsCreateResourceModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<RecordItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [deletingResourceName, setDeletingResourceName] = useState<string | null>(null);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(
@@ -92,6 +97,34 @@ export const App: React.FC = () => {
       showToast((err as Error).message, 'error');
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  // Create Resource
+  const handleCreateResource = async (name: string, seed?: Record<string, unknown>[]) => {
+    await createResource(name, seed);
+    await refreshData(false);
+    setCurrentView(name);
+    showToast(`Resource /${name} created`);
+  };
+
+  // Delete Resource
+  const handleConfirmDeleteResource = async () => {
+    if (!deletingResourceName) return;
+    try {
+      await deleteResource(deletingResourceName);
+      await refreshData(false);
+      if (currentView === deletingResourceName) {
+        const remaining = (state?.resourceNames || []).filter(
+          (r) => r !== deletingResourceName,
+        );
+        setCurrentView(remaining.length > 0 ? remaining[0] : '__logs__');
+      }
+      showToast(`Resource /${deletingResourceName} deleted`);
+    } catch (err) {
+      showToast((err as Error).message, 'error');
+    } finally {
+      setDeletingResourceName(null);
     }
   };
 
@@ -172,6 +205,8 @@ export const App: React.FC = () => {
           currentView={currentView}
           onSelectView={setCurrentView}
           logsCount={state.logs.length}
+          onOpenCreateResource={() => setIsCreateResourceModalOpen(true)}
+          onDeleteResource={(name) => setDeletingResourceName(name)}
         />
 
         {/* Content View */}
@@ -198,6 +233,13 @@ export const App: React.FC = () => {
         </main>
       </div>
 
+      {/* Create Resource Modal */}
+      <CreateResourceModal
+        isOpen={isCreateResourceModalOpen}
+        onClose={() => setIsCreateResourceModalOpen(false)}
+        onCreate={handleCreateResource}
+      />
+
       {/* Create / Edit Record Modal */}
       <RecordModal
         isOpen={isRecordModalOpen}
@@ -207,7 +249,7 @@ export const App: React.FC = () => {
         resourceName={currentView}
       />
 
-      {/* Confirm Delete Modal */}
+      {/* Confirm Delete Record Modal */}
       <ConfirmModal
         isOpen={deletingId !== null}
         title="Delete Record"
@@ -216,6 +258,17 @@ export const App: React.FC = () => {
         isDestructive={true}
         onConfirm={handleConfirmDelete}
         onClose={() => setDeletingId(null)}
+      />
+
+      {/* Confirm Delete Resource Modal */}
+      <ConfirmModal
+        isOpen={deletingResourceName !== null}
+        title="Delete Resource Collection"
+        message={`Are you sure you want to delete the entire /${deletingResourceName} collection? All records in this resource will be permanently removed.`}
+        confirmLabel="Delete Collection"
+        isDestructive={true}
+        onConfirm={handleConfirmDeleteResource}
+        onClose={() => setDeletingResourceName(null)}
       />
 
       {/* Confirm Reset Database Modal */}

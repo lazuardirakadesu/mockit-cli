@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, ListFilter, ScrollText, Layers, ExternalLink } from 'lucide-react';
+import { Database, ListFilter, ScrollText, Layers, Plus, Trash2 } from 'lucide-react';
 import type { RecordItem } from '../types.ts';
 
 interface SidebarProps {
@@ -8,6 +8,8 @@ interface SidebarProps {
   currentView: string; // resource name or '__logs__'
   onSelectView: (view: string) => void;
   logsCount: number;
+  onOpenCreateResource: () => void;
+  onDeleteResource: (name: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -16,6 +18,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onSelectView,
   logsCount,
+  onOpenCreateResource,
+  onDeleteResource,
 }) => {
   return (
     <aside className="w-64 border-r border-border-hairline bg-surface flex flex-col justify-between shrink-0 select-none">
@@ -37,26 +41,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation Sections */}
         <div className="p-3 space-y-6 overflow-y-auto">
-          {/* Resources */}
+          {/* Resources Section */}
           <div>
-            <div className="flex items-center gap-2 px-2 mb-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
-              <Database className="w-3.5 h-3.5" />
-              <span>Mock Resources</span>
+            <div className="flex items-center justify-between px-2 mb-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
+              <div className="flex items-center gap-2">
+                <Database className="w-3.5 h-3.5" />
+                <span>Mock Resources</span>
+              </div>
+              <button
+                type="button"
+                onClick={onOpenCreateResource}
+                title="Add new mock resource collection"
+                className="p-1 rounded hover:bg-surface-hover text-text-muted hover:text-indigo-400 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div className="space-y-1">
               {resourceNames.length === 0 ? (
-                <div className="px-3 py-2 text-xs text-text-muted italic">
-                  No resources defined
+                <div className="px-3 py-2 text-xs text-text-muted italic flex items-center justify-between">
+                  <span>No resources defined</span>
+                  <button
+                    onClick={onOpenCreateResource}
+                    className="text-indigo-400 hover:underline text-xs"
+                  >
+                    + Create
+                  </button>
                 </div>
               ) : (
                 resourceNames.map((name) => {
                   const count = resources[name]?.length ?? 0;
                   const isActive = currentView === name;
                   return (
-                    <button
+                    <div
                       key={name}
                       onClick={() => onSelectView(name)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded text-xs transition-colors text-left ${
+                      className={`group w-full flex items-center justify-between px-3 py-2 rounded text-xs transition-colors text-left cursor-pointer ${
                         isActive
                           ? 'bg-surface-active text-text-primary font-medium border border-border-hairline'
                           : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
@@ -70,23 +90,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         />
                         <span className="truncate">/{name}</span>
                       </div>
-                      <span
-                        className={`font-mono text-[11px] px-1.5 py-0.2 rounded ${
-                          isActive
-                            ? 'bg-indigo-950/40 text-indigo-300 border border-indigo-800/30'
-                            : 'bg-surface-subtle text-text-muted border border-border-subtle'
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    </button>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`font-mono text-[11px] px-1.5 py-0.2 rounded ${
+                            isActive
+                              ? 'bg-indigo-950/40 text-indigo-300 border border-indigo-800/30'
+                              : 'bg-surface-subtle text-text-muted border border-border-subtle'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteResource(name);
+                          }}
+                          title={`Delete collection /${name}`}
+                          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-950/30 text-text-muted hover:text-red-400 transition-all"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
                   );
                 })
               )}
             </div>
           </div>
 
-          {/* Monitoring */}
+          {/* Monitoring Section */}
           <div>
             <div className="flex items-center gap-2 px-2 mb-2 text-[11px] font-mono uppercase tracking-wider text-text-muted">
               <ListFilter className="w-3.5 h-3.5" />

@@ -1,7 +1,7 @@
 /**
  * Dynamic route generator.
- * Iterates config.resources to register 6 CRUD routes per resource,
- * then registers static custom routes from config.routes.
+ * Mounts custom static routes first, then mounts dynamic CRUD handlers on /api/:resource
+ * that resolve dynamically against the in-memory store.
  */
 
 import { Hono } from 'hono';
@@ -21,71 +21,8 @@ export function buildRouter(
   persistence: Persistence,
 ): { app: Hono; resourceInfos: ResourceInfo[] } {
   const app = new Hono();
-  const resourceInfos: ResourceInfo[] = [];
 
-  // ── CRUD routes for each resource ──────────────────────────────────
-  for (const [resource, definition] of Object.entries(config.resources)) {
-    const basePath = `/api/${resource}`;
-    const allowedMethods = definition.options?.allowedMethods ?? [
-      'GET',
-      'POST',
-      'PUT',
-      'PATCH',
-      'DELETE',
-    ];
-    const isReadOnly = definition.options?.readOnly ?? false;
-    const methods: string[] = [];
-
-    // GET — List & Detail
-    if (allowedMethods.includes('GET')) {
-      app.get(basePath, handleList(store, resource, definition));
-      app.get(`${basePath}/:id`, handleDetail(store, resource));
-      methods.push('GET');
-    }
-
-    if (!isReadOnly) {
-      // POST — Create
-      if (allowedMethods.includes('POST')) {
-        app.post(basePath, handleCreate(store, persistence, resource, definition));
-        methods.push('POST');
-      }
-
-      // PUT — Full replace
-      if (allowedMethods.includes('PUT')) {
-        app.put(
-          `${basePath}/:id`,
-          handleUpdate(store, persistence, resource, definition, false),
-        );
-        methods.push('PUT');
-      }
-
-      // PATCH — Partial update
-      if (allowedMethods.includes('PATCH')) {
-        app.patch(
-          `${basePath}/:id`,
-          handleUpdate(store, persistence, resource, definition, true),
-        );
-        methods.push('PATCH');
-      }
-
-      // DELETE — Remove
-      if (allowedMethods.includes('DELETE')) {
-        app.delete(
-          `${basePath}/:id`,
-          handleDelete(store, persistence, resource),
-        );
-        methods.push('DELETE');
-      }
-    }
-
-    resourceInfos.push({
-      name: resource,
-      recordCount: store.getRecordCount(resource),
-      methods,
-    });
-  }
-
-  // ── Custom static routes ───────────────────────────────────────────
+  // ── 1. Custom static routes ─────────────────────────────────────────
   for (const [routeKey, routeDef] of Object.entries(config.routes)) {
     const spaceIndex = routeKey.indexOf(' ');
     if (spaceIndex === -1) continue;
@@ -96,14 +33,12 @@ export function buildRouter(
     if (!routePath) continue;
 
     const handler = (c: Context) => {
-      // Set custom headers
       if (routeDef.headers) {
         for (const [key, value] of Object.entries(routeDef.headers)) {
           c.header(key, value);
         }
       }
 
-      // Simple template replacements in body
       let body = routeDef.body;
       if (typeof body === 'object' && body !== null) {
         const json = JSON.stringify(body)
@@ -134,6 +69,150 @@ export function buildRouter(
         break;
     }
   }
+
+  // ── 2. Dynamic CRUD routing on /api/:resource and /api/:resource/:id ──
+  // GET /api/:resource — List
+  app.get('/api/:resource', async (c, next) => {
+    const resource = c.req.param('resource');
+    if (!store.hasResource(resource)) {
+      return next();
+    }
+    const definition = config.resources[resource] ?? {};
+    const allowedMethods = definition.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    if (!allowedMethods.includes('GET')) {
+      return c.json({ error: 'Method Not Allowed' }, 405);
+    }
+    return handleList(store, resource, definition)(c);
+  });
+
+  // GET /api/:resource/:id — Detail
+  app.get('/api/:resource/:id', async (c, next) => {
+    const resource = c.req.param('resource');
+    if (!store.hasResource(resource)) {
+      return next();
+    }
+    const definition = config.resources[resource] ?? {};
+    const allowedMethods = definition.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    if (!allowedMethods.includes('GET')) {
+      return c.json({ error: 'Method Not Allowed' }, 405);
+    }
+    return handleDetail(store, resource)(c);
+  });
+
+  // POST /api/:resource — Create
+  app.post('/api/:resource', async (c, next) => {
+    const resource = c.req.param('resource');
+    if (!store.hasResource(resource)) {
+      return next();
+    }
+    const definition = config.resources[resource] ?? {};
+    const allowedMethods = definition.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    const isReadOnly = definition.options?.readOnly ?? false;
+    if (isReadOnly || !allowedMethods.includes('POST')) {
+      return c.json({ error: 'Method Not Allowed' }, 405);
+    }
+    return handleCreate(store, persistence, resource, definition)(c);
+  });
+
+  // PUT /api/:resource/:id — Full replace
+  app.put('/api/:resource/:id', async (c, next) => {
+    const resource = c.req.param('resource');
+    if (!store.hasResource(resource)) {
+      return next();
+    }
+    const definition = config.resources[resource] ?? {};
+    const allowedMethods = definition.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    const isReadOnly = definition.options?.readOnly ?? false;
+    if (isReadOnly || !allowedMethods.includes('PUT')) {
+      return c.json({ error: 'Method Not Allowed' }, 405);
+    }
+    return handleUpdate(store, persistence, resource, definition, false)(c);
+  });
+
+  // PATCH /api/:resource/:id — Partial merge
+  app.patch('/api/:resource/:id', async (c, next) => {
+    const resource = c.req.param('resource');
+    if (!store.hasResource(resource)) {
+      return next();
+    }
+    const definition = config.resources[resource] ?? {};
+    const allowedMethods = definition.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    const isReadOnly = definition.options?.readOnly ?? false;
+    if (isReadOnly || !allowedMethods.includes('PATCH')) {
+      return c.json({ error: 'Method Not Allowed' }, 405);
+    }
+    return handleUpdate(store, persistence, resource, definition, true)(c);
+  });
+
+  // DELETE /api/:resource/:id — Remove
+  app.delete('/api/:resource/:id', async (c, next) => {
+    const resource = c.req.param('resource');
+    if (!store.hasResource(resource)) {
+      return next();
+    }
+    const definition = config.resources[resource] ?? {};
+    const allowedMethods = definition.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    const isReadOnly = definition.options?.readOnly ?? false;
+    if (isReadOnly || !allowedMethods.includes('DELETE')) {
+      return c.json({ error: 'Method Not Allowed' }, 405);
+    }
+    return handleDelete(store, persistence, resource)(c);
+  });
+
+  // ── Build startup resource info list ─────────────────────────────────
+  const resourceInfos: ResourceInfo[] = store.getResources().map((name) => {
+    const def = config.resources[name];
+    const allowed = def?.options?.allowedMethods ?? [
+      'GET',
+      'POST',
+      'PUT',
+      'PATCH',
+      'DELETE',
+    ];
+    const isReadOnly = def?.options?.readOnly ?? false;
+    const methods = allowed.filter((m) => m === 'GET' || !isReadOnly);
+    return {
+      name,
+      recordCount: store.getRecordCount(name),
+      methods,
+    };
+  });
 
   return { app, resourceInfos };
 }
